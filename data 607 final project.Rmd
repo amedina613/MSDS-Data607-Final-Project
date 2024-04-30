@@ -1,0 +1,51 @@
+---
+title: "Data 607 final project"
+author: "Keith DeNivo"
+date: "2024-04-29"
+output: html_document
+---
+
+```{r}
+
+library(dplyr)
+library(dbplyr)
+library(RPostgres)
+library(tidyverse)
+library(geojsonio)
+library(RCurl)
+library(tidyr)
+library(reshape2)
+library(geojsonR)
+library(ggplot2)
+library(sf)
+```
+
+```{r}
+
+c <- getURL("https://raw.githubusercontent.com/amedina613/MSDS-Data607-Final-Project/main/National_Obesity_By_State.geojson")
+
+
+#geojson file stored temporary
+tmp_geojson <- tempfile(fileext = ".geojson")
+download.file(
+  "https://raw.githubusercontent.com/amedina613/MSDS-Data607-Final-Project/main/National_Obesity_By_State.geojson",
+  tmp_geojson
+)
+
+#use sf library to read geojson
+
+obesity_geojson_sf <- read_sf(tmp_geojson)
+
+ggplot(obesity_geojson_sf) +
+  geom_sf(fill = "#69b3a2", color = "black") +
+  theme_void()
+
+glimpse(obesity_geojson_sf)
+class(obesity_geojson_sf)
+state_obesity_df <- obesity_geojson_sf |> 
+  select(NAME, Obesity)
+state_obesity_df <- as.data.frame(state_obesity_df)
+state_obesity_df <-  subset(state_obesity_df, select = -c(geometry) )
+
+
+```
