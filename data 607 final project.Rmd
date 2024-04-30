@@ -5,7 +5,7 @@ date: "2024-04-29"
 output: html_document
 ---
 
-```{r}
+```{r library}
 
 library(dplyr)
 library(dbplyr)
@@ -18,9 +18,10 @@ library(reshape2)
 library(geojsonR)
 library(ggplot2)
 library(sf)
+library(Hmisc)
 ```
 
-```{r}
+```{r obesity}
 
 c <- getURL("https://raw.githubusercontent.com/amedina613/MSDS-Data607-Final-Project/main/National_Obesity_By_State.geojson")
 
@@ -36,16 +37,66 @@ download.file(
 
 obesity_geojson_sf <- read_sf(tmp_geojson)
 
+#graph geojson
 ggplot(obesity_geojson_sf) +
   geom_sf(fill = "#69b3a2", color = "black") +
   theme_void()
 
 glimpse(obesity_geojson_sf)
 class(obesity_geojson_sf)
+
+#extract the obesity % for each state
 state_obesity_df <- obesity_geojson_sf |> 
   select(NAME, Obesity)
 state_obesity_df <- as.data.frame(state_obesity_df)
 state_obesity_df <-  subset(state_obesity_df, select = -c(geometry) )
+glimpse(state_obesity_df)
 
+```
+
+```{r stateinfo}
+state_info_df <- read_csv("https://raw.githubusercontent.com/amedina613/MSDS-Data607-Final-Project/main/Population%20%26%20Abbreviation%20%26%20Income.csv")
+glimpse(state_info_df)
+
+
+```
+
+```{r  combine}
+colnames(state_obesity_df)[colnames(state_obesity_df) == 'NAME'] <- 'State'
+
+state_obesity_info_df <- merge(state_info_df,state_obesity_df,by="State")
+glimpse(state_obesity_info_df)
+
+#Obesity % vs Median income
+ggplot(state_obesity_info_df, aes(x = state_obesity_info_df$`Median Income`, y = state_obesity_info_df$Obesity))+
+  geom_point()+
+  geom_smooth(method= lm)
+mod1 = lm(formula = state_obesity_info_df$Obesity ~ state_obesity_info_df$'Median Income', data = state_obesity_info_df)
+summary(mod1)
+
+
+```
+
+```{r restaurant}
+restaurant_df <- read_csv("https://raw.githubusercontent.com/amedina613/MSDS-Data607-Final-Project/main/Fast_Food_Restaurants.csv")
+
+unique(restaurant_df$province)
+number_restaurants_df <- as.data.frame(table(unlist(restaurant_df$province)))
+```
+
+```{r restaurant per capita}
+names(number_restaurants_df)[1] <- "Abreviation"
+names(number_restaurants_df)[2] <- "number_restaurants"
+state_obesity_info_restaurant_df <- merge(state_obesity_info_df,number_restaurants_df,by="Abreviation")
+
+state_obesity_info_restaurant_df <- state_obesity_info_restaurant_df %>%
+   mutate(restaurant_per_capita = number_restaurants / `2023 Population`)
+
+#Obesity % vs restaurants per capita
+ggplot(state_obesity_info_restaurant_df, aes(x = state_obesity_info_restaurant_df$restaurant_per_capita, y = state_obesity_info_restaurant_df$Obesity))+
+  geom_point()+
+  geom_smooth(method= lm)
+mod2 = lm(formula = state_obesity_info_restaurant_df$Obesity ~ state_obesity_info_restaurant_df$restaurant_per_capita, data = state_obesity_info_restaurant_df)
+summary(mod2)
 
 ```
