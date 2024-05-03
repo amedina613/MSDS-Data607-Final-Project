@@ -19,7 +19,35 @@ library(geojsonR)
 library(ggplot2)
 library(sf)
 library(Hmisc)
+library(RMySQL)
 ```
+
+
+``` {r connection_to_db}
+
+vectorpass <- c('t','h','e','q','u','i','c','k','b','r','o','w','n','f','o','x','j','u','m','p','o','v','e','r','l','a','z','y','d','o','g','0','1','2','3','4','5','6','7','8','9',".")
+#list of alphanumeric characters to make the password into a simple code.
+
+pass = paste(vectorpass[8],vectorpass[3],vectorpass[6],vectorpass[1],vectorpass[2],vectorpass[42],vectorpass[29],vectorpass[3],vectorpass[13],vectorpass[6],vectorpass[22],vectorpass[11],vectorpass[36],vectorpass[41],sep="")
+#constructing the password from the list
+
+mysqlconnection <- dbConnect(RMySQL::MySQL(),
+
+                             host="cunydata607sql.mysql.database.azure.com",
+
+                             dbname = "keith.denivo49",
+
+                             port=3306,
+
+                             user="keith.denivo49",
+
+                             password=pass)
+#connecting to database.
+src_dbi(mysqlconnection)
+#lists all the tables in the database with tbls.
+
+```
+
 
 ```{r obesity}
 
@@ -82,6 +110,40 @@ restaurant_df <- read_csv("https://raw.githubusercontent.com/amedina613/MSDS-Dat
 
 unique(restaurant_df$province)
 number_restaurants_df <- as.data.frame(table(unlist(restaurant_df$province)))
+```
+
+# Upload the data frames to the database:
+```{r upload data}
+
+
+conn <-  mysqlconnection
+con <- mysqlconnection
+
+#table was created
+
+dbWriteTable(conn = con,
+             name = "restaurant_df",
+             value = restaurant_df,            
+             overwrite = TRUE)
+dbWriteTable(conn = con,
+             name = "state_info_df",
+             value = state_info_df,            
+             overwrite = TRUE)
+dbWriteTable(conn = con,
+             name = "state_obesity_df",
+             value = state_obesity_df,           
+             overwrite = TRUE)
+
+dbWriteTable(conn = con,
+             name = "number_restaurants_df",
+             value = number_restaurants_df,            
+             overwrite = TRUE)
+dbWriteTable(conn = con,
+             name = "state_obesity_info_df",
+             value = state_obesity_info_df,            
+             overwrite = TRUE)
+
+src_dbi(mysqlconnection)
 ```
 
 ```{r restaurant per capita}
