@@ -4,7 +4,7 @@ author: "Keith DeNivo"
 date: "2024-04-29"
 output: html_document
 ---
-
+# Load libraries
 ```{r library}
 
 library(dplyr)
@@ -21,7 +21,11 @@ library(sf)
 library(Hmisc)
 library(RMySQL)
 ```
+# Introduction: 
+__For our final project we will be exploring the relationship between obesity rates and socioeconomic factors. Obesity, a significant public health concern, is associated with various chronic conditions. By analyzing publicly available data sets, we will investigate how variables such as median state income and the density of fast-food restaurants correlate with obesity rates. Through this analysis, we seek to better understand the drivers of obesity and contribute to informed strategies for improving public health outcomes.__
 
+
+__Establish connection to the MySQL database.__
 
 ``` {r connection_to_db}
 
@@ -47,7 +51,7 @@ src_dbi(mysqlconnection)
 #lists all the tables in the database with tbls.
 
 ```
-
+__Retrieve and preprocess obesity data from a GeoJSON file.__
 
 ```{r obesity}
 
@@ -81,6 +85,7 @@ state_obesity_df <-  subset(state_obesity_df, select = -c(geometry) )
 glimpse(state_obesity_df)
 
 ```
+__Read in state information dataset.__
 
 ```{r stateinfo}
 state_info_df <- read_csv("https://raw.githubusercontent.com/amedina613/MSDS-Data607-Final-Project/main/Population%20%26%20Abbreviation%20%26%20Income.csv")
@@ -88,6 +93,7 @@ glimpse(state_info_df)
 
 
 ```
+__Merge obesity and state information datasets.__
 
 ```{r  combine}
 colnames(state_obesity_df)[colnames(state_obesity_df) == 'NAME'] <- 'State'
@@ -95,15 +101,17 @@ colnames(state_obesity_df)[colnames(state_obesity_df) == 'NAME'] <- 'State'
 state_obesity_info_df <- merge(state_info_df,state_obesity_df,by="State")
 glimpse(state_obesity_info_df)
 
+```
+__Analyze the relationship between obesity rates and median income.__
+```{r obesity vs median income}
 #Obesity % vs Median income
 ggplot(state_obesity_info_df, aes(x = state_obesity_info_df$`Median Income`, y = state_obesity_info_df$Obesity))+
   geom_point()+
   geom_smooth(method= lm)
 mod1 = lm(formula = state_obesity_info_df$Obesity ~ state_obesity_info_df$'Median Income', data = state_obesity_info_df)
-summary(mod1)
-
-
+summary(mod1) 
 ```
+__Read in fast-food restaurant data and calculate the number of fast-food restaurants per state.__
 
 ```{r restaurant}
 restaurant_df <- read_csv("https://raw.githubusercontent.com/amedina613/MSDS-Data607-Final-Project/main/Fast_Food_Restaurants.csv")
@@ -146,7 +154,9 @@ dbWriteTable(conn = con,
 src_dbi(mysqlconnection)
 ```
 
-```{r restaurant per capita}
+__Merge obesity and restaurant datasets.__
+
+```{r merge restaurants and obesity}
 names(number_restaurants_df)[1] <- "Abreviation"
 names(number_restaurants_df)[2] <- "number_restaurants"
 state_obesity_info_restaurant_df <- merge(state_obesity_info_df,number_restaurants_df,by="Abreviation")
@@ -154,11 +164,21 @@ state_obesity_info_restaurant_df <- merge(state_obesity_info_df,number_restauran
 state_obesity_info_restaurant_df <- state_obesity_info_restaurant_df %>%
    mutate(restaurant_per_capita = number_restaurants / `2023 Population`)
 
+```
+
+__Calculate restaurants per capita and analyze the relationship with obesity rates.__
+```{r restaurant per capita}
+
 #Obesity % vs restaurants per capita
 ggplot(state_obesity_info_restaurant_df, aes(x = state_obesity_info_restaurant_df$restaurant_per_capita, y = state_obesity_info_restaurant_df$Obesity))+
   geom_point()+
   geom_smooth(method= lm)
+
 mod2 = lm(formula = state_obesity_info_restaurant_df$Obesity ~ state_obesity_info_restaurant_df$restaurant_per_capita, data = state_obesity_info_restaurant_df)
 summary(mod2)
 
 ```
+# Conclusion:
+Based on these findings, we can conclude that there is a statistically significant negative relationship between median income and obesity rate. The higher the median income, the lower the obesity rate are. However, it's important to note that while this relationship is statistically significant, the coefficient for "Median Income" is very small, suggesting that other factors may also play a significant role in determining obesity rates. 
+
+We can also conclude that there is a statistically significant positive relationship between restaurants per capita and obesity rate. 
