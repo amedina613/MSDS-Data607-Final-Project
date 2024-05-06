@@ -181,4 +181,4 @@ summary(mod2)
 # Conclusion:
 Based on these findings, we can conclude that there is a statistically significant negative relationship between median income and obesity rate. The higher the median income, the lower the obesity rate are. However, it's important to note that while this relationship is statistically significant, the coefficient for "Median Income" is very small, suggesting that other factors may also play a significant role in determining obesity rates. 
 
-We can also conclude that there is a statistically significant positive relationship between restaurants per capita and obesity rate. 
+We can also conclude that there is a statistically significant positive relationship between restaurants per capita and obesity rate.
